@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Upcycle - Eco Marketplace</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f4f4f4; }
+    header { background: #2e7d32; color: white; padding: 1rem; text-align: center; position: relative; }
+    nav button { margin: 0.25rem; padding: 0.5rem 1rem; border: none; border-radius: 5px; cursor: pointer; }
+    nav button:hover { background-color: #1b4d21; color: #fff; }
+    .container { padding: 1rem; }
+    .hidden { display: none; }
+    .card {
+      background: white;
+      padding: 1rem;
+      margin: 0.5rem 0;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    input, select, textarea {
+      width: 100%;
+      margin: 0.5rem 0;
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      box-sizing: border-box;
+    }
+    button.primary {
+      background: #2e7d32;
+      color: white;
+      border: none;
+      padding: 0.6rem 1rem;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button.primary:hover {
+      background: #1b4d21;
+    }
+    img.product-image {
+      max-width: 100px;
+      max-height: 100px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin-right: 1rem;
+      vertical-align: middle;
+    }
+    .listing-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+    .flex-row {
+      display: flex;
+      align-items: center;
+    }
+    .cart-item button {
+      margin-left: 1rem;
+      background: #b71c1c;
+      font-weight: bold;
+    }
+    #profileBadge {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      color: #fff;
+      font-weight: bold;
+      cursor: pointer;
+      display: none;
+    }
+    #profilePhoto {
+      width: 32px;
+      height: 32px;
+      background: #1b4d21;
+      border-radius: 50%;
+      text-align: center;
+      line-height: 32px;
+      font-size: 20px;
+      display: inline-block;
+      vertical-align: middle;
+      user-select: none;
+    }
+    #profileName {
+      margin-left: 8px;
+      vertical-align: middle;
+      user-select: none;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Upcycle - Eco Marketplace</h1>
+    <nav>
+      <button onclick="navTo('authSection')">Login/Register</button>
+      <button onclick="navTo('profileSection')">Profile</button>
+      <button onclick="navTo('dashboardSection')">Dashboard</button>
+      <button onclick="navTo('newListingSection')">New Listing</button>
+      <button onclick="navTo('browseSection')">Browse</button>
+      <button onclick="navTo('cartSection')">Cart</button>
+      <button onclick="navTo('purchasesSection')">Previous Purchases</button>
+      <button onclick="logout()">Logout</button>
+    </nav>
+    <div id="profileBadge">
+      <div id="profilePhoto"></div><span id="profileName"></span>
+    </div>
+  </header>
+  <div class="container">
+    <section id="authSection" class="card">
+      <h2>Register</h2>
+      <input id="regEmail" type="email" placeholder="Email" required />
+      <input id="regPassword" type="password" placeholder="Password" required />
+      <button class="primary" onclick="register()">Register</button>
+      <hr />
+      <h2>Login</h2>
+      <input id="loginEmail" type="email" placeholder="Email" required />
+      <input id="loginPassword" type="password" placeholder="Password" required />
+      <button class="primary" onclick="login()">Login</button>
+    </section>
+    <section id="profileSection" class="card hidden">
+      <h2>Profile</h2>
+      <input id="username" type="text" placeholder="Username" required />
+      <button class="primary" onclick="saveProfile()">Save Profile</button>
+    </section>
+    <section id="dashboardSection" class="card hidden">
+      <h2>Your Dashboard</h2>
+      <div id="myListings"></div>
+    </section>
+    <section id="newListingSection" class="card hidden">
+      <h2>Create New Listing</h2>
+      <input id="listingTitle" type="text" placeholder="Title" required />
+      <textarea id="listingDesc" placeholder="Description" required></textarea>
+      <select id="listingCategory" required>
+        <option value="" disabled selected>Select Category</option>
+        <option value="Furniture">Furniture</option>
+        <option value="Electronics">Electronics</option>
+        <option value="Clothing">Clothing</option>
+        <option value="Other">Other</option>
+      </select>
+      <input id="listingPrice" type="number" placeholder="Price" min="1" required />
+      <input id="listingImage" type="text" placeholder="Image URL (placeholder)" />
+      <button class="primary" onclick="submitListing()">Submit Listing</button>
+    </section>
+    <section id="browseSection" class="card hidden">
+      <h2>Browse Products</h2>
+      <select id="filterCategory" onchange="filterListings()">
+        <option value="">All Categories</option>
+        <option value="Furniture">Furniture</option>
+        <option value="Electronics">Electronics</option>
+        <option value="Clothing">Clothing</option>
+        <option value="Other">Other</option>
+      </select>
+      <input id="searchKeyword" type="text" placeholder="Search by title" oninput="filterListings()" />
+      <div id="allListings"></div>
+    </section>
+    <section id="detailSection" class="card hidden">
+      <h2 id="detailTitle"></h2>
+      <p id="detailDesc"></p>
+      <p><strong>Category:</strong> <span id="detailCategory"></span></p>
+      <p><strong>Price:</strong> ₹<span id="detailPrice"></span></p>
+      <img id="detailImage" src="" alt="Product Image" style="max-width:200px; border-radius:8px;" />
+      <button class="primary" onclick="addToCart()">Add to Cart</button>
+    </section>
+    <section id="cartSection" class="card hidden">
+      <h2>Your Cart</h2>
+      <div id="cartItems"></div>
+      <button class="primary" onclick="checkout()">Checkout</button>
+    </section>
+    <section id="purchasesSection" class="card hidden">
+      <h2>Previous Purchases</h2>
+      <div id="purchaseItems"></div>
+    </section>
+  </div>
+  <script>
+    // Data storage
+    let users = JSON.parse(localStorage.getItem("users")) || [];
+    let currentUser = JSON.parse(localStorage.getItem("currentUser")) || null;
+    let listings = JSON.parse(localStorage.getItem("listings")) || [];
+    let cart = JSON.parse(localStorage.getItem("cart")) || [];
+    let purchases = JSON.parse(localStorage.getItem("purchases")) || [];
+    let editListingId = null;
+    let currentDetail = null;
+
+    function navTo(sectionId) {
+      if (
+        sectionId !== "authSection" &&
+        !currentUser
+      ) {
+        alert("Please login first.");
+        sectionId = "authSection";
+      }
+      document.querySelectorAll("section").forEach((s) => s.classList.add("hidden"));
+      document.getElementById(sectionId).classList.remove("hidden");
+      if (sectionId === "dashboardSection") loadDashboard();
+      else if (sectionId === "browseSection") loadListings();
+      else if (sectionId === "cartSection") loadCart();
+      else if (sectionId === "purchasesSection") loadPurchases();
+      else if (sectionId === "profileSection") loadProfile();
+      window.scrollTo(0, 0);
+    }
+
+    function alertMessage(msg, type = "info") {
+      alert(msg); // Placeholder, customize later for better UI
+    }
+
+    // Register new user
+    function register() {
+      const email = document.getElementById("regEmail").value.trim();
+      const password = document.getElementById("regPassword").value.trim();
+      if (!email || !password) return alertMessage("Email and password are required.");
+      if (users.find((u) => u.email === email))
+        return alertMessage("User already exists.");
+      const hashedPassword = btoa(password);
+      users.push({ email, password: hashedPassword, username: "", listings: [] });
+      localStorage.setItem("users", JSON.stringify(users));
+      document.getElementById("regEmail").value = "";
+      document.getElementById("regPassword").value = "";
+      alertMessage("Registration successful! Please login.");
+    }
+
+    // Login user
+    function login() {
+      const email = document.getElementById("loginEmail").value.trim();
+      const password = document.getElementById("loginPassword").value.trim();
+      if (!email || !password) return alertMessage("Email and password are required.");
+      const hashedPassword = btoa(password);
+      const user = users.find((u) => u.email === email && u.password === hashedPassword);
+      if (!user) {
+        alertMessage("Invalid login credentials.");
+        return;
+      }
+      currentUser = user;
+      localStorage.setItem("currentUser", JSON.stringify(currentUser));
+      clearLoginInputs();
+      alertMessage("Login successful!");
+      updateProfileBadge();
+      navTo("browseSection");
+    }
+
+    function clearLoginInputs() {
+      document.getElementById("loginEmail").value = "";
+      document.getElementById("loginPassword").value = "";
+    }
+
+    // Logout user
+    function logout() {
+      currentUser = null;
+      localStorage.removeItem("currentUser");
+      alertMessage("Logged out successfully.");
+      updateProfileBadge();
+      navTo("authSection");
+    }
+
+    // Load profile edit form
+    function loadProfile() {
+      if (!currentUser) return navTo("authSection");
+      document.getElementById("username").value = currentUser.username || "";
+    }
+
+    // Save profile username
+    function saveProfile() {
+      const username = document.getElementById("username").value.trim();
+      if (!username) {
+        alertMessage("Username cannot be empty.");
+        return;
+      }
+      currentUser.username = username;
+      users = users.map((u) => (u.email === currentUser.email ? currentUser : u));
+      localStorage.setItem("users", JSON.stringify(users));
+      localStorage.setItem("currentUser", JSON.stringify(currentUser));
+      alertMessage("Profile updated successfully.");
+      updateProfileBadge();
+    }
+
+    // Load user's listings on dashboard
+    function loadDashboard() {
+      if (!currentUser) return navTo("authSection");
+      const container = document.getElementById("myListings");
+      container.innerHTML = "";
+      const userListings = listings.filter((l) => l.owner === currentUser.email);
+      if (userListings.length === 0) {
+        container.innerHTML = "<p>No listings yet. Create one!</p>";
+        return;
+      }
+      userListings.forEach((l) => {
+        const div = document.createElement("div");
+        div.className = "card listing-item flex-row";
+        div.innerHTML = `
+          <img class="product-image" src="${l.image || 'https://via.placeholder.com/150'}" alt="${l.title}" />
+          <div style="flex-grow:1;">
+            <h3>${l.title}</h3>
+            <p>${l.desc}</p>
+            <p><b>₹${l.price}</b></p>
+          </div>
+          <div>
+            <button onclick="startEditListing(${l.id})">Edit</button>
+            <button onclick="deleteListing(${l.id})">Delete</button>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    // Prepare listing for editing
+    function startEditListing(id) {
+      const listing = listings.find((l) => l.id === id);
+      if (!listing) return alertMessage("Listing not found.");
+      editListingId = id;
+      document.getElementById("listingTitle").value = listing.title;
+      document.getElementById("listingDesc").value = listing.desc;
+      document.getElementById("listingCategory").value = listing.category;
+      document.getElementById("listingPrice").value = listing.price;
+      document.getElementById("listingImage").value = listing.image || "";
+      navTo("newListingSection");
+    }
+
+    // Delete a listing
+    function deleteListing(id) {
+      if (!confirm("Are you sure you want to delete this listing?")) return;
+      listings = listings.filter((l) => l.id !== id);
+      localStorage.setItem("listings", JSON.stringify(listings));
+      loadDashboard();
+      alertMessage("Listing deleted successfully.");
+    }
+
+    // Submit new or edited listing
+    function submitListing() {
+      const title = document.getElementById("listingTitle").value.trim();
+      const desc = document.getElementById("listingDesc").value.trim();
+      const category = document.getElementById("listingCategory").value;
+      const price = parseFloat(document.getElementById("listingPrice").value);
+      const image = document.getElementById("listingImage").value.trim() || "https://via.placeholder.com/150";
+      if (!title || !desc || !category || !price || price <= 0) {
+        alertMessage("Please fill in all required fields correctly.");
+        return;
+      }
+      if (editListingId) {
+        // Edit existing listing
+        let listing = listings.find((l) => l.id === editListingId);
+        if (!listing) {
+          alertMessage("Listing not found.");
+          return;
+        }
+        listing.title = title;
+        listing.desc = desc;
+        listing.category = category;
+        listing.price = price;
+        listing.image = image;
+        editListingId = null;
+        alertMessage("Listing updated successfully.");
+      } else {
+        // Add new listing
+        const newListing = {
+          id: Date.now(),
+          owner: currentUser.email,
+          title,
+          desc,
+          category,
+          price,
+          image,
+        };
+        listings.push(newListing);
+        alertMessage("Listing created successfully.");
+      }
+      localStorage.setItem("listings", JSON.stringify(listings));
+      clearListingForm();
+      navTo("dashboardSection");
+    }
+
+    function clearListingForm() {
+      document.getElementById("listingTitle").value = "";
+      document.getElementById("listingDesc").value = "";
+      document.getElementById("listingCategory").value = "";
+      document.getElementById("listingPrice").value = "";
+      document.getElementById("listingImage").value = "";
+    }
+
+    // Load all listings, including filters
+    function loadListings() {
+      filterListings();
+    }
+
+    // Filter listings by category and keyword for browsing - excludes items in cart and adds Add to Cart button
+    function filterListings() {
+      const category = document.getElementById("filterCategory").value;
+      const keyword = document.getElementById("searchKeyword").value.trim().toLowerCase();
+      const container = document.getElementById("allListings");
+      container.innerHTML = "";
+      // Exclude listings already added to cart
+      const filtered = listings.filter((l) => {
+        const inCart = cart.some(c => c.id === l.id);
+        return (
+          !inCart &&
+          (!category || l.category === category) &&
+          l.title.toLowerCase().includes(keyword)
+        );
+      });
+      if (filtered.length === 0) {
+        container.innerHTML = "<p>No products found.</p>";
+        return;
+      }
+      filtered.forEach((l) => {
+        const div = document.createElement("div");
+        div.className = "card listing-item flex-row";
+        div.innerHTML = `
+          <img class="product-image" src="${l.image || 'https://via.placeholder.com/150'}" alt="${l.title}" />
+          <div style="flex-grow:1;">
+            <h3>${l.title}</h3>
+            <p><b>₹${l.price}</b></p>
+          </div>
+          <button onclick="addToCartById(${l.id})">Add to Cart</button>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    // Show detail of a product
+    function viewDetail(id) {
+      currentDetail = listings.find((l) => l.id === id);
+      if (!currentDetail) {
+        alertMessage("Product not found.");
+        navTo("browseSection");
+        return;
+      }
+      document.getElementById("detailTitle").innerText = currentDetail.title;
+      document.getElementById("detailDesc").innerText = currentDetail.desc;
+      document.getElementById("detailCategory").innerText = currentDetail.category;
+      document.getElementById("detailPrice").innerText = currentDetail.price;
+      document.getElementById("detailImage").src = currentDetail.image || "https://via.placeholder.com/150";
+      navTo("detailSection");
+    }
+
+    // Add current detail product to cart
+    function addToCart() {
+      if (!currentDetail) {
+        alertMessage("No product selected.");
+        return;
+      }
+      cart.push({ ...currentDetail, cartId: Date.now() });
+      localStorage.setItem("cart", JSON.stringify(cart));
+      alertMessage("Product added to cart.");
+      filterListings(); // refresh browse to hide added item
+    }
+
+    // Add listing by ID to cart and refresh browse listings
+    function addToCartById(id) {
+      const listing = listings.find(l => l.id === id);
+      if (!listing) {
+        alertMessage("Listing not found.");
+        return;
+      }
+      cart.push({ ...listing, cartId: Date.now() });
+      localStorage.setItem("cart", JSON.stringify(cart));
+      alertMessage("Product added to cart.");
+      filterListings();
+    }
+
+    // Load cart with remove button for each item
+    function loadCart() {
+      const container = document.getElementById("cartItems");
+      container.innerHTML = "";
+      if (cart.length === 0) {
+        container.innerHTML = "<p>Your cart is empty.</p>";
+        return;
+      }
+      cart.forEach((item) => {
+        const div = document.createElement("div");
+        div.className = "card cart-item flex-row";
+        div.innerHTML = `
+          <img class="product-image" src="${item.image || 'https://via.placeholder.com/150'}" alt="${item.title}" />
+          <div style="flex-grow:1;">
+            <h3>${item.title}</h3>
+            <p><b>₹${item.price}</b></p>
+          </div>
+          <button onclick="removeFromCart(${item.cartId})">Remove</button>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    // Remove a single item from cart
+    function removeFromCart(cartId) {
+      cart = cart.filter((item) => item.cartId !== cartId);
+      localStorage.setItem("cart", JSON.stringify(cart));
+      loadCart();
+      filterListings(); // refresh browse to show removed item again
+    }
+
+    // Checkout: move cart items to purchases, then clear cart
+    function checkout() {
+      if (cart.length === 0) {
+        alertMessage("Cart is empty.");
+        return;
+      }
+      purchases = purchases.concat(cart.map(({ cartId, ...rest }) => rest));
+      cart = [];
+      localStorage.setItem("cart", JSON.stringify(cart));
+      localStorage.setItem("purchases", JSON.stringify(purchases));
+      alertMessage("Checkout successful!");
+      loadCart();
+      filterListings(); // refresh browse to show all available
+    }
+
+    // Load previous purchases
+    function loadPurchases() {
+      const container = document.getElementById("purchaseItems");
+      container.innerHTML = "";
+      if (purchases.length === 0) {
+        container.innerHTML = "<p>No previous purchases.</p>";
+        return;
+      }
+      purchases.forEach((p) => {
+        const div = document.createElement("div");
+        div.className = "card listing-item flex-row";
+        div.innerHTML = `
+          <img class="product-image" src="${p.image || 'https://via.placeholder.com/150'}" alt="${p.title}" />
+          <div style="flex-grow:1;">
+            <h3>${p.title}</h3>
+            <p><b>₹${p.price}</b></p>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    // Show logged-in user's first letter and username in header
+    function updateProfileBadge() {
+      if (!currentUser || !currentUser.username) {
+        document.getElementById("profileBadge").style.display = "none";
+        return;
+      }
+      const badge = document.getElementById("profileBadge");
+      const photo = document.getElementById("profilePhoto");
+      const name = document.getElementById("profileName");
+      photo.innerText = currentUser.username.charAt(0).toUpperCase();
+      name.innerText = currentUser.username;
+      badge.style.display = "block";
+    }
+
+    // Initial navigation to login/register on page load
+    navTo("authSection");
+
+    // If user already logged in on load, show profile badge
+    if (currentUser) updateProfileBadge();
+
+  </script>
+</body>
+</html>
